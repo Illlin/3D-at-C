@@ -3,8 +3,8 @@
 from objects.base import *
 
 base_settings = {
-    "fov":          0.5*np.pi,
-    "res":          [100, 100],
+    "fov":          2*np.pi,
+    "res":          [100, 50],
     "min_dist":     0.001,
     "max_dist":     100
 }
@@ -77,6 +77,7 @@ class Camera(Base):
 
         for y in range(0, res[1]):  # Screen vertical pos
             for x in range(0, res[0]):  # Screen horisontal pos
+
                 pixel_pos_spherical = self.look_pos - offset + horisontal_step*x + vertical_step*y
                 pixel_pos_cartesian = spherical_to_cartesian(pixel_pos_spherical)
 
@@ -89,6 +90,6 @@ class Camera(Base):
 
                 frame[x+(y*res[0])] = ray.surface_colour
 
-            prt += "\n"
+            prt += "|\n"
 
         print(prt)
