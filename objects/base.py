@@ -30,3 +30,15 @@ class Base:
         # Get the minimum distance from a point to the object
 
         return mag(self.pos - other)
+
+
+class Scene(Base):
+    # A set of objects
+
+    def __init__(self, objects):
+        super().__init__([0, 0, 0])
+        self.objects = objects
+
+    def distance_to(self, other):
+        return min([x.distance_to(other) for x in self.objects])
+

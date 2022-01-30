@@ -1,13 +1,29 @@
 # Handles the rendering of an image
-
 from objects.base import *
+from PIL import Image
+import texture
 
+x = 200
 base_settings = {
     "fov":          2*np.pi,
-    "res":          [100, 50],
+    "res":          [x, x//2],
     "min_dist":     0.001,
-    "max_dist":     100
+    "max_dist":     100,
+    "colour_drop":  1
 }
+
+
+class Ray:
+    # Class to hold data a ray will gather
+    # I will use external functions for ray traversal for speed reasons
+
+    def __init__(self):
+        self.surface_colour = (0, 0, 0)
+        self.steps = 0
+        self.hit_object = None
+        self.distance_travelled = 0
+        self.hit_pos = np.array([0, 0, 0])
+        self.hit = False
 
 
 def cast_ray(start, scene: Base, uv, max_d, min_d):
@@ -23,8 +39,7 @@ def cast_ray(start, scene: Base, uv, max_d, min_d):
             # TODO
             # Get colour
             # Get hit object
-
-            ray.surface_colour = np.array([1, 1, 1])
+            ray.surface_colour = texture.get_point(pos)
             hit = True
             ray.hit_pos = pos
             ray.hit = True
@@ -42,19 +57,6 @@ def cast_ray(start, scene: Base, uv, max_d, min_d):
         ray.steps += 1
 
 
-class Ray:
-    # Class to hold data a ray will gather
-    # I will use external functions for ray traversal for speed reasons
-
-    def __init__(self):
-        self.surface_colour = np.array([0, 0, 0])
-        self.steps = 0
-        self.hit_object = None
-        self.distance_travelled = 0
-        self.hit_pos = np.array([0, 0, 0])
-        self.hit = False
-
-
 class Camera(Base):
     def __init__(self, pos, look_pos, settings=base_settings):
         super().__init__(pos)
@@ -62,6 +64,7 @@ class Camera(Base):
         self.look_pos = look_pos
 
     def render(self, scene):
+        dropoff = self.settings["colour_drop"]
         res = self.settings["res"]
         min_d = self.settings["min_dist"]
         max_d = self.settings["max_dist"]
@@ -73,8 +76,6 @@ class Camera(Base):
 
         offset = np.array(horisontal_step*(res[0]//2) + vertical_step*(res[1]//2))
 
-        prt = ""
-
         for y in range(0, res[1]):  # Screen vertical pos
             for x in range(0, res[0]):  # Screen horisontal pos
 
@@ -83,13 +84,17 @@ class Camera(Base):
 
                 ray = cast_ray(self.pos, scene, pixel_pos_cartesian, max_d, min_d)
 
-                if ray.hit:
-                    prt += "██"
-                else:
-                    prt += "  "
+                frame[x+(y*res[0])] = (
+                    ray.surface_colour[0],
+                    ray.surface_colour[1],
+                    int(((1/(ray.distance_travelled*ray.distance_travelled))*ray.surface_colour[2]))
+                )
 
-                frame[x+(y*res[0])] = ray.surface_colour
+        return res, frame
 
-            prt += "|\n"
 
-        print(prt)
+def save_frame(frame, file_location):
+    image = Image.new("HSV", frame[0])
+    image.putdata(frame[1])
+    image = image.convert("RGB")
+    image.save(file_location)
