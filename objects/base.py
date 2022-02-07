@@ -25,11 +25,14 @@ class Base:
 
     def __init__(self, pos):
         self.pos = np.array(pos)
+        self.vel = np.array(0, 0, 0)
 
     def distance_to(self, other):
         # Get the minimum distance from a point to the object
 
         return mag(self.pos - other)
+
+
 
 
 class Scene(Base):

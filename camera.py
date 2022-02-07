@@ -3,13 +3,13 @@ from objects.base import *
 from PIL import Image
 import texture
 
-x = 200
+x = 64
 base_settings = {
-    "fov":          2*np.pi,
-    "res":          [x, x//2],
+    "fov":          0.5*np.pi,
+    "res":          [x, x],#//2],
     "min_dist":     0.001,
     "max_dist":     100,
-    "colour_drop":  1
+    "colour_drop":  5
 }
 
 
@@ -37,9 +37,8 @@ def cast_ray(start, scene: Base, uv, max_d, min_d):
         if distance_to < min_d:
             # If at the target return the ray
             # TODO
-            # Get colour
             # Get hit object
-            ray.surface_colour = texture.get_point(pos)
+            ray.surface_colour = [255,255,255] #texture.get_point(pos)
             hit = True
             ray.hit_pos = pos
             ray.hit = True
@@ -87,9 +86,10 @@ class Camera(Base):
                 frame[x+(y*res[0])] = (
                     ray.surface_colour[0],
                     ray.surface_colour[1],
-                    int(((1/(ray.distance_travelled*ray.distance_travelled))*ray.surface_colour[2]))
+                    int(((dropoff/(ray.distance_travelled*ray.distance_travelled))*ray.surface_colour[2]))
                 )
 
+            print((y*100)/res[1]//1, "%")
         return res, frame
 
 

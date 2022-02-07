@@ -6,7 +6,6 @@ size = 512
 
 img = Image.open(filename)
 img = img.convert("HSV")
-print(img)
 data = np.array(img, dtype="uint8")
 
 
