@@ -25,12 +25,25 @@ class Base:
 
     def __init__(self, pos):
         self.pos = np.array(pos)
-        self.vel = np.array(0, 0, 0)
+        self.vel = np.array([0, 0, 0])
+        self.rot = np.array([0, 0, 0])
+        self.move_func = lambda x: np.array([0, 0, 0])
+
+    def phys_init(self, vel):
+        self.vel = vel
+        self.move_func = lambda x: np.array(vel)
 
     def distance_to(self, other):
         # Get the minimum distance from a point to the object
 
         return mag(self.pos - other)
+
+    def move(self, delta):
+        # Delta represents the time between frames
+
+        self.pos += self.move_func(delta)
+
+
 
 
 

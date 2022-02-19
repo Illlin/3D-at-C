@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 
-filename = "brick.png"
+filename = "square_floor.png"
 size = 512
 
 img = Image.open(filename)
@@ -12,5 +12,5 @@ data = np.array(img, dtype="uint8")
 def get_point(vect):
     vect *= size
     vect %= size
-    return data[int((vect[0]+vect[1]))%size][int(vect[2])]
+    return data[int((vect[1]+vect[2]))%size][int(vect[0])]
 
