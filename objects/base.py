@@ -31,7 +31,7 @@ class Base:
 
     def phys_init(self, vel):
         self.vel = vel
-        self.move_func = lambda x: np.array(vel)
+        self.move_func = lambda x: x*self.vel
 
     def distance_to(self, other):
         # Get the minimum distance from a point to the object

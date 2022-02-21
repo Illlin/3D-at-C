@@ -47,10 +47,14 @@ class Scene(Base):
         flags_arr = scene["Flags"]
         self.frame = scene["Frame"]
 
+        flags = 0
+        for i, c in enumerate(flags_arr):
+            flags += c*(2**(len(flags_arr)-(i+1)))
+
         for shape in scene["Shapes"]:
-            type = shape[0]
+            shape_type = shape[0]
             creator = shape[1]
             phys = shape[2]
-            shape_object = supported[type](*creator)
+            shape_object = supported[shape_type](*creator)
             shape_object.phys_init(*phys)
             self.objects.append(shape_object)

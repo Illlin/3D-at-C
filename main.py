@@ -16,13 +16,13 @@ sphere = scene.Scene([0, 0, 0], "TestScene.json")
 print(sphere.pos)
 setting = camera.cam_360
 setting = camera.base_settings
-x = 128
-setting["res"] = [x, x]
+x = 1024
+setting["res"] = [x, 100]
 
 
 camL = camera.Camera([-0.05, 0.05, 0], [0.73, 0], settings=setting)
 camR = camera.Camera([0.05, -0.05, 0], [0.73, 0], settings=setting)
-camera.save_frame(camL.render(sphere), "outputL.png")
+camera.save_frame(camL.render(sphere), "data3.png")
 #camera.save_frame(camR.render(sphere), "outputR.png")
 
 """

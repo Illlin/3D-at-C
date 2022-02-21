@@ -5,7 +5,7 @@ filename = "square_floor.png"
 size = 512
 
 img = Image.open(filename)
-img = img.convert("HSV")
+img = img.convert("RGB")
 data = np.array(img, dtype="uint8")
 
 
