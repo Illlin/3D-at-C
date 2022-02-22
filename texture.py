@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 
 filename = "square_floor.png"
-size = 512
+size = 1024
 
 img = Image.open(filename)
 img = img.convert("RGB")

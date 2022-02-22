@@ -218,8 +218,9 @@ class Camera(Base):
             for x in range(0, res[0]):  # Screen horisontal pos
                 #print(wl_to_rgb(y+400))
                 #col = red_shift_wl((x-res[0]/2), y+1, res[0]/2+10)
-                col = red_shift_rgb((x - res[0] / 2), texture.get_point(np.array([x/512,0,y/512])), res[0] / 2 + 10)
-                #col = red_shift_rgb((x - res[0] / 2), texture.get_point(np.array([x, y, 0])), res[0] / 2 + 10)
+
+                col = red_shift_rgb((x - res[0] / 2), texture.get_point(np.array([x/1024,0,y/1024])), res[0] / 2 + 10)
+                #col = red_shift_rgb((x - res[0] / 2), (255,0,255), res[0] / 2 + 10)
                 #col = wl_to_rgb(y)
                 frame[x+(y*res[0])] = tuple(col)
 

@@ -17,7 +17,7 @@ print(sphere.pos)
 setting = camera.cam_360
 setting = camera.base_settings
 x = 1024
-setting["res"] = [x, 100]
+setting["res"] = [x, 25]
 
 
 camL = camera.Camera([-0.05, 0.05, 0], [0.73, 0], settings=setting)
