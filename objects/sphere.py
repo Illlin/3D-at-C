@@ -11,4 +11,5 @@ class Sphere(Base):
 
     def distance_to(self, other):
         assert isinstance(self.radius, object)
-        return mag(self.pos - other) - self.radius
+        dist_to_center = self.pos - other
+        return dist_to_center - self.radius*dist_to_center

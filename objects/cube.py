@@ -13,4 +13,4 @@ class Cube(Base):
         # Outwards distance.
 
         d = np.array([abs(x) for x in self.pos - other]) - self.size
-        return mag(max([*d, 0]) + min([max(d[0], max(d[1:])), 0]))
+        return max([*d, 0]) + min([max(d[0], max(d[1:])), 0])

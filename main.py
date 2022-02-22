@@ -4,34 +4,45 @@ import objects
 import camera
 import time
 import scene
+from multiprocessing import Pool
+import os
+
+if os.getlogin() == "solst":
+    print("Wrong OS dummy")
+    exit()
+
+ffmpeg = 'ffmpeg -r 5 -i "render/frame%04d.png" -c:v libx264 -vf "fps=30,format=yuv420p" render/out.mp4 -y'
+
+os.system("rm render/frame*.png")
+
 a = time.time()
 
-print(time.time()-a)
+def render(frame):
+    print("Thread", frame)
+    filename = "render/frame{frame:04d}.png".format(frame=frame)
+    world = scene.Scene([0, 0, 0], "TestScene.json")
 
-#sphere = objects.oct_tree.OctTree([2, 2, 0], 1, tree)
-sphere = objects.sphere.Sphere([2, 2, 0], np.sqrt(3))
-sphere = objects.cube.Cube([2, 2, 0], np.array([1, 1, 1]))
-sphere = scene.Scene([0, 0, 0], "TestScene.json")
+    world.advance_frame(frame)
 
-print(sphere.pos)
-setting = camera.cam_360
-setting = camera.base_settings
-x = 1024
-setting["res"] = [x, 25]
+    #setting = camera.cam_360
+    setting = camera.base_settings
+    x = 512
+
+    setting["res"] = [x, x]
 
 
-camL = camera.Camera([-0.05, 0.05, 0], [0.73, 0], settings=setting)
-camR = camera.Camera([0.05, -0.05, 0], [0.73, 0], settings=setting)
-camera.save_frame(camL.render(sphere), "data3.png")
-#camera.save_frame(camR.render(sphere), "outputR.png")
+    cam = camera.Camera([0, 0, 0], [0, 0], settings=setting)
+    camera.save_frame(cam.render(world), filename)
 
-"""
-sphere = objects.cube.Cube([2, 2, 0], [1, 1, 1])
+    return filename
 
-print(sphere.distance_to([0, 0, 0]))
 
-cam = camera.Camera([0, 0, 0], [0.73, 0])
+if __name__ == "__main__":
+    with Pool(23) as p:
+        print(p.map(render, range(0, 23)))
 
-cam.settings["fov"] = 2*np.pi
-camera.save_frame(cam.render(sphere),"output.png")
-"""
+os.system(ffmpeg)
+
+print("\n\n---------------\nIt took", int(time.time()-a), "Seconds to render")
+
+

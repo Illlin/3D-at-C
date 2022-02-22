@@ -17,7 +17,10 @@ def spherical_to_cartesian(spherical):
 
     return np.array([x, y, z])
 
+
 # Base 3d Object
+def default_move_func(vel, delta):
+    return delta*vel
 
 
 class Base:
@@ -27,21 +30,28 @@ class Base:
         self.pos = np.array(pos)
         self.vel = np.array([0, 0, 0])
         self.rot = np.array([0, 0, 0])
-        self.move_func = lambda x: np.array([0, 0, 0])
+        self.move_func = default_move_func
+        self.c = 0
 
     def phys_init(self, vel):
-        self.vel = vel
-        self.move_func = lambda x: x*self.vel
+        self.vel = np.array(vel)
 
     def distance_to(self, other):
         # Get the minimum distance from a point to the object
 
-        return mag(self.pos - other)
+        return self.pos - other
+
+    def get_speed_at(self, pos):
+        speed = self.vel
+
+        # TODO
+        # Angular velocity
+
+        return speed
 
     def move(self, delta):
         # Delta represents the time between frames
-
-        self.pos += self.move_func(delta)
+        self.pos += self.move_func(self.vel, delta)
 
 
 

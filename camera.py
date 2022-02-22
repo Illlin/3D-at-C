@@ -4,13 +4,15 @@ from PIL import Image
 import texture
 import math
 
-x = 512
+mag = np.linalg.norm
+
+x = 1024
 base_settings = {
     "fov":          0.5*np.pi,
     "res":          [x, x],#//2],
     "min_dist":     0.001,
     "max_dist":     100,
-    "gamma":  1
+    "gamma":  2
 }
 
 cam_360 = {
@@ -21,13 +23,16 @@ cam_360 = {
     "gamma":  1
 }
 
+base_texture = texture.Texture("cube.png", 512)
+background = texture.Texture("stars.png", 2880)
+
 
 class Ray:
     # Class to hold data a ray will gather
     # I will use external functions for ray traversal for speed reasons
 
     def __init__(self):
-        self.surface_colour = (0, 0, 0)
+        self.surface_colour = np.array([0, 0, 0])
         self.steps = 0
         self.hit_object = None
         self.distance_travelled = 0
@@ -80,74 +85,86 @@ def wl_to_rgb(wl, gamma = 0.8, max_intencity = 255, round=True):
         colour = [0, 0, 0]
 
     # Drop off intencity at vision limits
-    min = 0
-    fact = 1-min
+    min_factor = 0
+    fact = 1 - min_factor
     if 380 <= wl < 420:
-        factor = min + fact * ((wl - 380) / (420 - 380))
+        factor = min_factor + fact * ((wl - 380) / (420 - 380))
     elif 420 <= wl < 701:
         factor = 1
-    elif 701 <= wl < 781:
-        factor = min + fact * ((780 - wl) / (780 - 700))
+    elif 701 <= wl < 780:
+        factor = min_factor + fact * ((780 - wl) / (780 - 700))
     else:
         factor = 0
 
-    colour = [max_intencity * (val * factor) for val in colour]
-    #colour = [max_intencity * pow(val * factor, gamma) for val in colour]
+    colour = [max_intencity * pow(val * factor, gamma) for val in colour]
+
     if round:
         colour = [int(x) for x in colour]
 
-    return colour
+    return np.array(colour)
 
-def red_shift_wl(dv, wl, c):
+
+def red_shift_wl(dv, wl, c, doppler=True, lorenz=True):
     # If this is not the case, physics handler is broken and this function will divide by zero
     assert -c < dv < c
 
     # First we will account for time dilation of the frequency of light emitted using the Lorentz factor of the objects
+    if lorenz:
+        colour_freq = c / wl
 
-    colour_freq = c / wl
+        # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
+        lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
 
-    # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
-    lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
+        new_freq = lorentz_inv * colour_freq
 
-    new_freq = lorentz_inv * colour_freq
-
-    new_wl = c / new_freq
+        new_wl = c / new_freq
+    else:
+        new_wl = wl
     # Now we account for redshift caused by relative motion of the objects
     # http://hyperphysics.phy-astr.gsu.edu/hbase/Astro/redshf.html
 
     # Work out the Doppler factor ( Does not account for time dilation)
-    b = dv / c
-    z = math.sqrt((1+b)/(1-b))-1
+    if doppler:
+        b = dv / c
+        z = math.sqrt((1+b)/(1-b))-1
 
-    final_wl = (z+1) * new_wl
-
-    #colour_mix = np.array([wl_to_rgb(wl, max_intencity=1, round=False) for wl in final_wl])
+        final_wl = (z+1) * new_wl
+    else:
+        final_wl = new_wl
 
     final_colour = wl_to_rgb(final_wl)
+
     return final_colour
 
-def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440])):
+
+def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440]), doppler=True, lorenz=True):
     # If this is not the case, physics handler is broken and this function will divide by zero
     assert -c < dv < c
 
     # First we will account for time dilation of the frequency of light emitted using the Lorentz factor of the objects
+    if lorenz:
+        colour_freq = c / base_wl
 
-    colour_freq = c / base_wl
+        # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
+        lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
 
-    # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
-    lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
+        new_freq = lorentz_inv * colour_freq
 
-    new_freq = lorentz_inv * colour_freq
+        new_wl = c / new_freq
+    else:
+        new_wl = base_wl
 
-    new_wl = c / new_freq
     # Now we account for redshift caused by relative motion of the objects
     # http://hyperphysics.phy-astr.gsu.edu/hbase/Astro/redshf.html
 
     # Work out the Doppler factor ( Does not account for time dilation)
-    b = dv / c
-    z = math.sqrt((1+b)/(1-b))-1
+    if doppler:
+        b = dv / c
+        z = math.sqrt((1+b)/(1-b))-1
 
-    final_wl = (z+1) * new_wl
+        final_wl = (z+1) * new_wl
+    else:
+        final_wl = new_wl
 
     colour_mix = np.array([wl_to_rgb(wl, max_intencity=1, round=False) for wl in final_wl])
 
@@ -156,28 +173,66 @@ def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440])):
     final_b = base_colour[2] * colour_mix[2]
     final_colour = [final_r, final_g, final_b]
 
-    return [int(x) for x in sum(final_colour)]
+    return np.array([int(x) for x in sum(final_colour)])
 
 
-#print("----result----\n", red_shift(0.8, np.array([0, 255, 0]), 5))
+def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
+    # Flags:
+    #  0    Render Texture
+    #  2    Render Redshift (Doppler)
+    #  4    Render Redshift (Lorenz)
+    #  8    Render Length Contraction
+    # 16
+    # 32
+    # 64
 
-
-
-
-
-def cast_ray(start, scene: Base, uv, max_d, min_d):
     ray = Ray()
     hit = False
     pos = start
+    one_arr = np.array([1,1,1])
+    white = np.array([255,255,255])
 
     while not hit:
-        distance_to = scene.distance_to(pos)
+        if flags & 8 == 8:
+            # Get speed of object:
+            speed = scene.get_speed_at(scene.pos)
+            speed_uv = (speed/mag(speed))
+            lorenz = 1/np.sqrt(1-(speed*speed)/(scene.c*scene.c))
+
+            scale = np.array([1, 1, 1])/lorenz
+
+            distance_to = mag(scene.distance_to(pos/scale)) * min(scale)
+        else:
+            distance_to = mag(scene.distance_to(pos))
 
         if distance_to < min_d:
             # If at the target return the ray
             # TODO
             # Get hit object
-            ray.surface_colour = texture.get_point(pos)  # [255,255,255]
+
+            v1 = scene.get_speed_at(pos) # Velocity of hit object
+            direction = pos-start
+            uv_direction = direction/mag(direction)
+            dv = v1*uv_direction
+            mag_dv = mag(dv) * np.sign(np.dot(dv, one_arr))
+
+            if flags & 1 == 1:
+                if flags & 8 == 8:
+                    text_pos = pos / scale
+                    colour = base_texture.get_point(text_pos - scene.object_at_point(pos).pos)
+                else:
+                    colour = base_texture.get_point(pos - scene.object_at_point(pos).pos)
+            else:
+                colour = white
+
+            ray.surface_colour = red_shift_rgb(
+                mag_dv,
+                colour,
+                scene.c,
+                doppler=(flags & 2 == 2),
+                lorenz=(flags & 4 == 4)
+
+            )
             hit = True
             ray.hit_pos = pos
             ray.hit = True
@@ -185,7 +240,8 @@ def cast_ray(start, scene: Base, uv, max_d, min_d):
 
         elif ray.distance_travelled > max_d:
             # If the ray left the render area
-
+            colour = background.get_point2d(screen_pos)
+            ray.surface_colour = colour[:]
             hit = True
             ray.hit_pos = pos
             return ray
@@ -215,27 +271,29 @@ class Camera(Base):
         offset = np.array(horisontal_step*(res[0]//2) + vertical_step*(res[1]//2))
 
         for y in range(0, res[1]):  # Screen vertical pos
-            for x in range(0, res[0]):  # Screen horisontal pos
-                #print(wl_to_rgb(y+400))
-                #col = red_shift_wl((x-res[0]/2), y+1, res[0]/2+10)
+            for x in range(0, res[0]):  # Screen horizontal pos
 
-                col = red_shift_rgb((x - res[0] / 2), texture.get_point(np.array([x/1024,0,y/1024])), res[0] / 2 + 10)
-                #col = red_shift_rgb((x - res[0] / 2), (255,0,255), res[0] / 2 + 10)
-                #col = wl_to_rgb(y)
-                frame[x+(y*res[0])] = tuple(col)
-
-                """
                 pixel_pos_spherical = self.look_pos - offset + horisontal_step*x + vertical_step*y
                 pixel_pos_cartesian = spherical_to_cartesian(pixel_pos_spherical)
 
-                ray = cast_ray(self.pos, scene, pixel_pos_cartesian, max_d, min_d)
-
-                frame[x+(y*res[0])] = (
-                    ray.surface_colour[0],
-                    ray.surface_colour[1],
-                    int(((dropoff/(ray.distance_travelled*ray.distance_travelled))*ray.surface_colour[2]))
+                ray = cast_ray(
+                    self.pos,
+                    scene,
+                    pixel_pos_cartesian,
+                    max_d,
+                    min_d,
+                    scene.flags,
+                    np.array([x/res[0], y/res[0]])/2
                 )
-                """
+
+                if ray.distance_travelled > max_d:
+                    factor = 1
+                else:
+                    factor = float(dropoff/(ray.distance_travelled*ray.distance_travelled))
+                col = factor*ray.surface_colour
+                rgb = tuple([int(x) for x in col])
+
+                frame[x+(y*res[0])] = rgb
 
             print((y*100)/res[1]//1, "%")
         return res, frame
