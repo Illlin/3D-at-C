@@ -9,9 +9,21 @@ import os
 
 if os.getlogin() == "solst":
     print("Wrong OS dummy")
+    world = scene.Scene([0, 0, 0], "Ship.json")
+
+    world.advance_frame(0)
+
+    setting = camera.cam_360
+    #setting = camera.base_settings
+    x = 512
+
+    setting["res"] = [x, int(x/2)]
+
+    cam = camera.Camera([0, 0, 0], [0, 0], settings=setting)
+    camera.save_frame(cam.render(world), "render/graph.png")
     exit()
 
-ffmpeg = 'ffmpeg -r 5 -i "render/frame%04d.png" -c:v libx264 -vf "fps=30,format=yuv420p" render/out.mp4 -y'
+ffmpeg = 'ffmpeg -r 15 -i "render/frame%04d.png" -c:v libx264 -vf "fps=30,format=yuv420p" render/out.mp4 -y'
 
 os.system("rm render/frame*.png")
 
@@ -24,11 +36,11 @@ def render(frame):
 
     world.advance_frame(frame)
 
-    #setting = camera.cam_360
-    setting = camera.base_settings
+    setting = camera.cam_360
+    #setting = camera.base_settings
     x = 512
 
-    setting["res"] = [x, x]
+    setting["res"] = [x, int(x/2)]
 
 
     cam = camera.Camera([0, 0, 0], [0, 0], settings=setting)

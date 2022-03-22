@@ -2,7 +2,6 @@
 from objects.base import *
 from PIL import Image
 import texture
-import math
 
 mag = np.linalg.norm
 
@@ -24,7 +23,7 @@ cam_360 = {
 }
 
 base_texture = texture.Texture("cube.png", 512)
-background = texture.Texture("stars.png", 2880)
+background = texture.Texture("stars.png", 1440*2)
 
 
 class Ray:
@@ -113,7 +112,7 @@ def red_shift_wl(dv, wl, c, doppler=True, lorenz=True):
         colour_freq = c / wl
 
         # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
-        lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
+        lorentz_inv = np.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
 
         new_freq = lorentz_inv * colour_freq
 
@@ -126,7 +125,7 @@ def red_shift_wl(dv, wl, c, doppler=True, lorenz=True):
     # Work out the Doppler factor ( Does not account for time dilation)
     if doppler:
         b = dv / c
-        z = math.sqrt((1+b)/(1-b))-1
+        z = np.sqrt((1+b)/(1-b))-1
 
         final_wl = (z+1) * new_wl
     else:
@@ -146,7 +145,7 @@ def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440]), doppl
         colour_freq = c / base_wl
 
         # https://www.bbc.co.uk/bitesize/guides/zwdwwmn/revision/2
-        lorentz_inv = math.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
+        lorentz_inv = np.sqrt(1 - ((dv * dv) / (c * c)))  # 1 / Relative time
 
         new_freq = lorentz_inv * colour_freq
 
@@ -160,7 +159,7 @@ def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440]), doppl
     # Work out the Doppler factor ( Does not account for time dilation)
     if doppler:
         b = dv / c
-        z = math.sqrt((1+b)/(1-b))-1
+        z = np.sqrt((1+b)/(1-b))-1
 
         final_wl = (z+1) * new_wl
     else:
@@ -178,11 +177,11 @@ def red_shift_rgb(dv, base_colour, c, base_wl = np.array([650, 510, 440]), doppl
 
 def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
     # Flags:
-    #  0    Render Texture
+    #  1    Render Texture
     #  2    Render Redshift (Doppler)
     #  4    Render Redshift (Lorenz)
     #  8    Render Length Contraction
-    # 16
+    # 16    Render Background
     # 32
     # 64
 
@@ -195,15 +194,24 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
     while not hit:
         if flags & 8 == 8:
             # Get speed of object:
-            speed = scene.get_speed_at(scene.pos)
+            speed = scene.get_speed_at(pos)
+
+            if mag(speed) > 5:  # FIXING SHIT
+                print("Something bad")
+
             speed_uv = (speed/mag(speed))
             lorenz = 1/np.sqrt(1-(speed*speed)/(scene.c*scene.c))
 
             scale = np.array([1, 1, 1])/lorenz
 
-            distance_to = mag(scene.distance_to(pos/scale)) * min(scale)
+            distance_to = scene.distance_to(pos/scale) * min(scale)
+
         else:
-            distance_to = mag(scene.distance_to(pos))
+            distance_to = scene.distance_to(pos)
+
+        pos = pos + (distance_to * uv)
+        ray.distance_travelled += distance_to
+        ray.steps += 1
 
         if distance_to < min_d:
             # If at the target return the ray
@@ -219,11 +227,15 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
             if flags & 1 == 1:
                 if flags & 8 == 8:
                     text_pos = pos / scale
-                    colour = base_texture.get_point(text_pos - scene.object_at_point(pos).pos)
+                    #colour = base_texture.get_point(text_pos - scene.object_at_point(pos).pos)
                 else:
-                    colour = base_texture.get_point(pos - scene.object_at_point(pos).pos)
+                    pass
+                    #colour = base_texture.get_point(pos - scene.object_at_point(pos).pos)
             else:
-                colour = white
+                pass
+                #colour = white
+
+            colour = white
 
             ray.surface_colour = red_shift_rgb(
                 mag_dv,
@@ -233,6 +245,7 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
                 lorenz=(flags & 4 == 4)
 
             )
+
             hit = True
             ray.hit_pos = pos
             ray.hit = True
@@ -240,15 +253,16 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
 
         elif ray.distance_travelled > max_d:
             # If the ray left the render area
-            colour = background.get_point2d(screen_pos)
-            ray.surface_colour = colour[:]
+            if flags & 16 == 16:
+                colour = background.get_point2d(screen_pos)
+
+                colour = white
+                ray.surface_colour = colour[:]
+            else:
+                ray.surface_colour = (255, 0, 0)
             hit = True
             ray.hit_pos = pos
             return ray
-
-        pos = pos + (distance_to*uv)
-        ray.distance_travelled += distance_to
-        ray.steps += 1
 
 
 class Camera(Base):
@@ -272,7 +286,6 @@ class Camera(Base):
 
         for y in range(0, res[1]):  # Screen vertical pos
             for x in range(0, res[0]):  # Screen horizontal pos
-
                 pixel_pos_spherical = self.look_pos - offset + horisontal_step*x + vertical_step*y
                 pixel_pos_cartesian = spherical_to_cartesian(pixel_pos_spherical)
 
