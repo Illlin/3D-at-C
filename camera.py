@@ -11,7 +11,7 @@ base_settings = {
     "res":          [x, x],#//2],
     "min_dist":     0.001,
     "max_dist":     100,
-    "gamma":  2
+    "gamma":  3
 }
 
 cam_360 = {
@@ -19,11 +19,19 @@ cam_360 = {
     "res":          [x, x//2],
     "min_dist":     0.001,
     "max_dist":     100,
-    "gamma":  1
+    "gamma":  5
+}
+
+cam_180 = {
+    "fov":          1*np.pi,
+    "res":          [x, x],
+    "min_dist":     0.001,
+    "max_dist":     100,
+    "gamma":  3
 }
 
 base_texture = texture.Texture("cube.png", 512)
-background = texture.Texture("stars.png", 1440*2)
+background = texture.Texture("stars.png", 1440*4)
 
 
 class Ray:
@@ -237,9 +245,9 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
 
             colour = white
 
-            ray.surface_colour = red_shift_rgb(
+            ray.surface_colour = red_shift_wl(
                 mag_dv,
-                colour,
+                550,
                 scene.c,
                 doppler=(flags & 2 == 2),
                 lorenz=(flags & 4 == 4)
@@ -256,7 +264,7 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
             if flags & 16 == 16:
                 colour = background.get_point2d(screen_pos)
 
-                colour = white
+                #colour = white
                 ray.surface_colour = colour[:]
             else:
                 ray.surface_colour = (255, 0, 0)

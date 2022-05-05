@@ -77,7 +77,9 @@ class Base:
 
     def get_speed_at(self, pos):
         # Hacky fix TODO remove hacky fix
-        safe_speed = 4
+        safe_speed = 4.95
+        #return self.vel
+        #return min(ma, safe_speed)
 
         speed = self.vel.copy()
 
@@ -87,19 +89,34 @@ class Base:
         if ma > safe_speed:
             return safe_speed*(speed/ma)
 
-
-
-        # TODO
-        # Angular velocity
-
         return speed
 
     def move(self, delta):
-        # Delta represents the time between frames
-        self.pos += self.move_func(self.vel, delta)
-
-        # Split into two functions
         self.rot += self.move_func(self.rot_vel, delta)
+        self.pos += self.move_func(self.vel, delta)
+        print(delta, self.vel, self.pos)
+        # Delta represents the time between frames
+        if False:
+            if delta > 2:
+                t = 2.0
+                a = np.array([0.0,-2.45,0.0])
+                self.pos += self.vel*t+0.5*a*t*t
+                self.vel = self.vel+a*t
+
+                t = delta - 2
+                a = np.array([0.0, 2.45, 0.0])
+                self.pos += self.vel * t + 0.5 * a * t * t
+                self.vel = self.vel + a * t
+
+            else:
+                a = np.array([0.0, -2.45, 0.0])
+                self.pos += self.vel * delta + 0.5 * a * delta * delta
+                self.vel = self.vel + a * delta
+
+            print(delta, self.vel, self.pos)
+            # Split into two functions
+            self.rot += self.move_func(self.rot_vel, delta)
+            self.vel += self.move_func(self.vel, delta)
 
 
 

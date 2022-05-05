@@ -4,7 +4,8 @@ import json
 
 supported = {
     "Cube": objects.cube.Cube,
-    "Sphere": objects.sphere.Sphere
+    "Sphere": objects.sphere.Sphere,
+    "Unison": objects.unison.Unison
 }
 
 
@@ -69,6 +70,7 @@ class Scene(Base):
         return dist
 
     def object_at_point(self, point):
+        return self.objects[0]
         # Get the closest object at a point
 
         dist = np.inf
