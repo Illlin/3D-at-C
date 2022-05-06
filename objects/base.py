@@ -42,14 +42,14 @@ def angular_velocity(pos, rot):
     # around X axis
     x = np.zeros(3)
     w = rot[0]
-    x_v = np.array([-pos[2], pos[1]])
+    x_v = np.array([pos[1], -pos[2]])
     x_v = w * (x_v / mag(x_v))
 
     if np.isnan(x_v).any():
         x_v = np.zeros(2)
 
-    x[2] = -x_v[0]
-    x[1] = x_v[1]
+    x[1] = x_v[0]
+    x[2] = x_v[1]
 
     # around Y axis
     y = np.zeros(3)

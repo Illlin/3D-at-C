@@ -14,11 +14,11 @@ if os.getlogin() == "solst":
 
     world.advance_frame(0)
 
-    setting = camera.cam_360
-    #setting = camera.base_settings
-    x = 1440
+    #setting = camera.cam_360
+    setting = camera.base_settings
+    x = 256
 
-    setting["res"] = [x, int(x/2)]
+    setting["res"] = [x, int(x)]
 
     cam = camera.Camera([0.0, 0.0, 0.0], [0.0, 0.0], settings=setting)
     camera.save_frame(cam.render(world), "render/graph.png")
@@ -56,7 +56,7 @@ def render(frame):
 
 if __name__ == "__main__":
     with Pool(50) as p:
-        print(p.map(render, range(0, 24)))
+        print(p.map(render, range(0, 25)))
 
 os.system(ffmpeg)
 

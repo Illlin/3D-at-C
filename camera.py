@@ -10,7 +10,7 @@ base_settings = {
     "fov":          0.5*np.pi,
     "res":          [x, x],#//2],
     "min_dist":     0.001,
-    "max_dist":     100,
+    "max_dist":     10,
     "gamma":  3
 }
 
@@ -30,7 +30,7 @@ cam_180 = {
     "gamma":  3
 }
 
-base_texture = texture.Texture("cube.png", 512)
+base_texture = texture.Texture("UV_Grid_Sm.jpg", 1024)
 background = texture.Texture("stars.png", 1440*4)
 
 
@@ -267,7 +267,7 @@ def cast_ray(start, scene: Base, uv, max_d, min_d, flags, screen_pos):
                 #colour = white
                 ray.surface_colour = colour[:]
             else:
-                ray.surface_colour = (255, 0, 0)
+                ray.surface_colour = (255, 255, 255)
             hit = True
             ray.hit_pos = pos
             return ray

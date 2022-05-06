@@ -5,7 +5,8 @@ import json
 supported = {
     "Cube": objects.cube.Cube,
     "Sphere": objects.sphere.Sphere,
-    "Unison": objects.unison.Unison
+    "Unison": objects.unison.Unison,
+    "Oct": objects.oct_tree.Tree
 }
 
 
