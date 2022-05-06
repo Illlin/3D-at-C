@@ -39,20 +39,46 @@ def default_move_func(vel, delta):
 
 
 def angular_velocity(pos, rot):
-    v = [0, 0, 0]
-    # x
-    r = mag([pos[1], pos[2]])
-    v[0] = rot[0] * r
+    # around X axis
+    x = np.zeros(3)
+    w = rot[0]
+    x_v = np.array([pos[1], -pos[2]])
+    x_v = w * (x_v / mag(x_v))
 
-    # y
-    r = mag([pos[0], pos[2]])
-    v[1] = rot[1] * r
+    if np.isnan(x_v).any():
+        x_v = np.zeros(2)
 
-    # z
-    r = mag([pos[0], pos[1]])
-    v[2] = rot[2] * r
+    x[1] = x_v[0]
+    x[2] = x_v[1]
 
-    return v
+    # around Y axis
+    y = np.zeros(3)
+    w = rot[1]
+    y_v = np.array([-pos[2], -pos[0]])
+    y_v = w * (y_v / mag(y_v))
+
+    if np.isnan(y_v).any():
+        y_v = np.zeros(2)
+
+    y[0] = y_v[0]
+    y[1] = y_v[1]
+
+    # around Z axis
+    z = np.zeros(3)
+    w = rot[2]
+    z_v = np.array([pos[1], pos[0]])
+    z_v = w*(z_v/mag(z_v))
+
+    if np.isnan(z_v).any():
+        z_v = np.zeros(2)
+
+    z[0] = z_v[0]
+    z[1] = z_v[1]
+
+    return np.sqrt(x*x + y*y + z*z)
+
+
+
 
 
 class Base:
@@ -77,7 +103,9 @@ class Base:
 
     def get_speed_at(self, pos):
         # Hacky fix TODO remove hacky fix
-        safe_speed = 4
+        safe_speed = 4.95
+        #return self.vel
+        #return min(ma, safe_speed)
 
         speed = self.vel.copy()
 
@@ -87,19 +115,34 @@ class Base:
         if ma > safe_speed:
             return safe_speed*(speed/ma)
 
-
-
-        # TODO
-        # Angular velocity
-
         return speed
 
     def move(self, delta):
-        # Delta represents the time between frames
-        self.pos += self.move_func(self.vel, delta)
-
-        # Split into two functions
         self.rot += self.move_func(self.rot_vel, delta)
+        self.pos += self.move_func(self.vel, delta)
+        print(delta, self.vel, self.pos)
+        # Delta represents the time between frames
+        if False:
+            if delta > 2:
+                t = 2.0
+                a = np.array([0.0,-2.45,0.0])
+                self.pos += self.vel*t+0.5*a*t*t
+                self.vel = self.vel+a*t
+
+                t = delta - 2
+                a = np.array([0.0, 2.45, 0.0])
+                self.pos += self.vel * t + 0.5 * a * t * t
+                self.vel = self.vel + a * t
+
+            else:
+                a = np.array([0.0, -2.45, 0.0])
+                self.pos += self.vel * delta + 0.5 * a * delta * delta
+                self.vel = self.vel + a * delta
+
+            print(delta, self.vel, self.pos)
+            # Split into two functions
+            self.rot += self.move_func(self.rot_vel, delta)
+            self.vel += self.move_func(self.vel, delta)
 
 
 

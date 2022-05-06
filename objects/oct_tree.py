@@ -14,11 +14,14 @@ sub_oct_pos = [
 ]
 sub_oct_pos = sub_oct_pos[::-1]
 
-class Tree:
+class Tree(Base):
     # An Oct Tree
 
     def __init__(self, depth=3):
         self.tree = self.fill_random(depth=depth)
+        self.rot=np.array([0.0,0,0])
+        self.pos = np.array([0.0, 0, 0])
+        self.move_func = default_move_func
 
     def fill_random(self, dencity=0.8, depth=0):
         tree = [

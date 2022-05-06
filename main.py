@@ -9,49 +9,54 @@ import os
 
 if os.getlogin() == "solst":
     print("Wrong OS dummy")
-    world = scene.Scene([0, 0, 0], "Ship.json")
+    start = time.time()
+    world = scene.Scene([0.0, 0.0, 0.0], "TestScene.json")
 
     world.advance_frame(0)
 
-    setting = camera.cam_360
-    #setting = camera.base_settings
-    x = 512
+    #setting = camera.cam_360
+    setting = camera.base_settings
+    x = 256
 
-    setting["res"] = [x, int(x/2)]
+    setting["res"] = [x, int(x)]
 
-    cam = camera.Camera([0, 0, 0], [0, 0], settings=setting)
+    cam = camera.Camera([0.0, 0.0, 0.0], [0.0, 0.0], settings=setting)
     camera.save_frame(cam.render(world), "render/graph.png")
+    print("took", int(time.time()-start))
     exit()
 
-ffmpeg = 'ffmpeg -r 15 -i "render/frame%04d.png" -c:v libx264 -vf "fps=30,format=yuv420p" render/out.mp4 -y'
-
+ffmpeg = 'ffmpeg -r 24 -i "render/frame%04d.png" -c:v libx264 -vf "fps=24,format=yuv420p" render/out.mp4 -y'
 os.system("rm render/frame*.png")
-
 a = time.time()
 
+
 def render(frame):
-    print("Thread", frame)
+    # Render the required frame in a thread safe manner
+
+    # Output file name with 4 digits.
     filename = "render/frame{frame:04d}.png".format(frame=frame)
+
+    # Create scene object
     world = scene.Scene([0, 0, 0], "TestScene.json")
+    world.advance_frame(frame)  # Advance time to current frame
 
-    world.advance_frame(frame)
+    # Load camera settings
+    setting = camera.base_settings
 
-    setting = camera.cam_360
-    #setting = camera.base_settings
-    x = 512
+    x = 64
+    setting["res"] = [x, int(x/1)]
 
-    setting["res"] = [x, int(x/2)]
-
-
+    # Initiate camera
     cam = camera.Camera([0, 0, 0], [0, 0], settings=setting)
-    camera.save_frame(cam.render(world), filename)
+    frame = cam.render(world)  # Render frame
+    camera.save_frame(frame, filename)  # Output frame
 
-    return filename
+    return filename  # Return from thread
 
 
 if __name__ == "__main__":
-    with Pool(23) as p:
-        print(p.map(render, range(0, 23)))
+    with Pool(50) as p:
+        print(p.map(render, range(0, 25)))
 
 os.system(ffmpeg)
 
